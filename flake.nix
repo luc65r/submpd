@@ -11,6 +11,8 @@
         nativeBuildInputs = with pkgs; [
           go_1_17
           gopls
+          pkg-config
+          alsa-lib
         ];
       };
     });

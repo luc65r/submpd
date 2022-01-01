@@ -19,7 +19,7 @@ func (r NormalResponse) Format() (bs []byte) {
 }
 
 type BinaryResponse struct {
-	Data map[string]string
+	Data       map[string]string
 	BinaryData []byte
 }
 
@@ -36,26 +36,26 @@ func (r BinaryResponse) Format() (bs []byte) {
 type Ack int
 
 const (
-	AckErrorNotList Ack = 1
-	AckErrorArg Ack = 2
-	AckErrorPassword Ack = 3
+	AckErrorNotList    Ack = 1
+	AckErrorArg        Ack = 2
+	AckErrorPassword   Ack = 3
 	AckErrorPermission Ack = 4
-	AckErrorUnknown Ack = 5
+	AckErrorUnknown    Ack = 5
 
-	AckErrorNoExist = 50
-	AckErrorPlaylistMax = 51
-	AckErrorSystem = 52
-	AckErrorPlaylistLoad = 53
-	AckErrorUpdateAlready = 54
-	AckErrorPlayerSync = 55
-	AckErrorExist = 56
+	AckErrorNoExist       Ack = 50
+	AckErrorPlaylistMax   Ack = 51
+	AckErrorSystem        Ack = 52
+	AckErrorPlaylistLoad  Ack = 53
+	AckErrorUpdateAlready Ack = 54
+	AckErrorPlayerSync    Ack = 55
+	AckErrorExist         Ack = 56
 )
 
 type FailureResponse struct {
-	Error Ack
+	Error     Ack
 	CommandNb int
-	Command string
-	Message string
+	Command   string
+	Message   string
 }
 
 func (r FailureResponse) Format() []byte {
