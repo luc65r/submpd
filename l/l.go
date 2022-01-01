@@ -37,7 +37,7 @@ var Level int = debugLevel
 
 var (
 	out = os.Stderr
-	mu sync.Mutex
+	mu  sync.Mutex
 	buf []byte
 )
 
@@ -68,7 +68,7 @@ func lprint(ll int, s string) {
 		buf = append(buf, strconv.Itoa(line)...)
 		buf = append(buf, ": "...)
 		buf = append(buf, s...)
-		if s[len(s) - 1] != '\n' {
+		if s[len(s)-1] != '\n' {
 			buf = append(buf, '\n')
 		}
 		buf = append(buf, "\033[m"...)

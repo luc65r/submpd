@@ -5,8 +5,8 @@ import (
 	"io"
 	"net"
 
-	"github.com/luc65r/submpd/mpd"
 	"github.com/luc65r/submpd/l"
+	"github.com/luc65r/submpd/mpd"
 )
 
 type Client struct {
@@ -64,10 +64,10 @@ func (c Client) Handle() {
 				}
 			} else {
 				rp = mpd.FailureResponse{
-					Error: mpd.AckErrorUnknown,
+					Error:     mpd.AckErrorUnknown,
 					CommandNb: cnb,
-					Command: rq.Command,
-					Message: "unknown command",
+					Command:   rq.Command,
+					Message:   "unknown command",
 				}
 			}
 			c.Conn.Write(rp.Format())

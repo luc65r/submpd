@@ -29,9 +29,9 @@ func main() {
 	l.Info("server started")
 
 	sub := subsonic.Client{
-		Client: http.DefaultClient,
-		BaseUrl: *subsonicUrl,
-		User: *username,
+		Client:     http.DefaultClient,
+		BaseUrl:    *subsonicUrl,
+		User:       *username,
 		ClientName: "submpd",
 	}
 
@@ -42,11 +42,11 @@ func main() {
 	l.Infof("authenticated to `%s` as `%s`", *subsonicUrl, *username)
 
 	state := submpd.State{
-		Sub: sub,
+		Sub:        sub,
 		SampleRate: 44100,
 	}
 
-	speaker.Init(state.SampleRate, state.SampleRate.N(time.Second / 30))
+	speaker.Init(state.SampleRate, state.SampleRate.N(time.Second/30))
 
 	for {
 		c, err := ln.Accept()
@@ -56,7 +56,7 @@ func main() {
 
 		client := submpd.Client{
 			State: &state,
-			Conn: c,
+			Conn:  c,
 		}
 
 		go client.Handle()

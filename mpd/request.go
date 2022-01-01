@@ -13,7 +13,7 @@ func ParseRequest(bs []byte) (rq Request, err error) {
 	if len(bs) == 0 {
 		return rq, fmt.Errorf("empty request")
 	}
-	if bs[len(bs) - 1] != '\n' {
+	if bs[len(bs)-1] != '\n' {
 		return rq, fmt.Errorf("request must end by a newline character")
 	}
 

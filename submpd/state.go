@@ -6,8 +6,8 @@ import (
 )
 
 type State struct {
-	Sub subsonic.Client
-	Streamer beep.StreamCloser
+	Sub        subsonic.Client
+	Streamer   beep.StreamCloser
 	SampleRate beep.SampleRate
-	Ctrl *beep.Ctrl
+	Ctrl       *beep.Ctrl
 }

@@ -30,8 +30,8 @@ var Commands = map[string]func(*State, []string) mpd.Response{
 	"outputs": func(s *State, args []string) mpd.Response {
 		return mpd.NormalResponse{
 			Data: map[string]string{
-				"outputid": "0",
-				"outputname": "default",
+				"outputid":      "0",
+				"outputname":    "default",
 				"outputenabled": "1",
 			},
 		}
