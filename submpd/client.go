@@ -7,76 +7,104 @@ import (
 
 	"github.com/luc65r/submpd/l"
 	"github.com/luc65r/submpd/mpd"
+	"github.com/luc65r/submpd/mpd/subsystems"
 )
 
 type Client struct {
-	State *State
-	Conn  net.Conn
+	State         *State
+	Conn          net.Conn
+	subChan       <-chan subsystems.Subsystems
+	subs          subsystems.Subsystems
+	cnb           int
+	inCommandList bool
+	idle          bool
 }
 
 func (c Client) Handle() {
-	cnb := 0
-	inCommandList := false
-
 	l.Infof("new client: %v", c.Conn.RemoteAddr())
-
-	r := bufio.NewReader(c.Conn)
 	c.Conn.Write([]byte("OK MPD 0.24\n"))
 
+	data := make(chan []byte)
+	go read(c.Conn, data)
+
+	for {
+		select {
+		case msg, ok := <-data:
+			if !ok {
+				return
+			}
+			handleRequest(&c, msg)
+
+		case sub := <-c.subChan:
+			c.subs |= sub
+			if c.idle {
+				c.Conn.Write(Commands["noidle"](&c, []string{}).Format())
+			}
+		}
+	}
+}
+
+func read(conn net.Conn, data chan<- []byte) {
+	r := bufio.NewReader(conn)
 	for {
 		msg, err := r.ReadBytes('\n')
 		if err != nil {
 			if err != io.EOF {
-				l.Errorf("%v: %v", c.Conn.RemoteAddr(), err)
+				l.Errorf("%v: %v", conn.RemoteAddr(), err)
 			}
-			c.Conn.Close()
-			return
+			conn.Close()
+			close(data)
+			break
 		}
+		data <- msg
+	}
+}
 
-		rq, err := mpd.ParseRequest(msg)
-		if err != nil {
-			l.Errorf("%v: failed to parse request: %s", c.Conn.RemoteAddr(), msg)
-			rp := mpd.FailureResponse{
-				Error:     mpd.AckErrorUnknown,
-				CommandNb: cnb,
-				Command:   "",
-				Message:   "failed to parse request",
-			}
-			c.Conn.Write(rp.Format())
+func handleRequest(c *Client, msg []byte) {
+	rq, err := mpd.ParseRequest(msg)
+	if err != nil {
+		l.Warningf("%v: failed to parse request: %s", c.Conn.RemoteAddr(), msg)
+		rp := mpd.FailureResponse{
+			Error:     mpd.AckErrorUnknown,
+			CommandNb: c.cnb,
+			Command:   "",
+			Message:   "failed to parse request",
 		}
-		l.Debugf("%v: %s", c.Conn.RemoteAddr(), msg)
+		c.Conn.Write(rp.Format())
+		c.inCommandList = false
+		c.cnb = 0
+	}
+	l.Debugf("%v: %s", c.Conn.RemoteAddr(), msg)
 
-		switch rq.Command {
-		case "command_list_begin":
-			inCommandList = true
-			cnb = -1
-		case "command_list_end":
-			if !inCommandList {
-				// TODO
-			}
-			inCommandList = false
-		default:
-			var rp mpd.Response
-			if f, ok := Commands[rq.Command]; ok {
-				rp = f(c.State, rq.Args)
-				if r, ok := rp.(mpd.FailureResponse); ok {
-					r.CommandNb = cnb
-				}
-			} else {
-				rp = mpd.FailureResponse{
-					Error:     mpd.AckErrorUnknown,
-					CommandNb: cnb,
-					Command:   rq.Command,
-					Message:   "unknown command",
-				}
-			}
-			c.Conn.Write(rp.Format())
+	var rp mpd.Response
+	if c.idle && rq.Command != "noidle" {
+		l.Warningf("%v: expected noidle, got: %s", c.Conn.RemoteAddr(), rq.Command)
+		rp = mpd.FailureResponse{
+			Error:     mpd.AckErrorUnknown,
+			CommandNb: c.cnb,
+			Command:   rq.Command,
+			Message:   "expected noidle",
 		}
+	} else if f, ok := Commands[rq.Command]; ok {
+		l.Debugf("%v: handling command: %s", c.Conn.RemoteAddr(), rq.Command)
+		rp = f(c, rq.Args)
+	} else {
+		l.Warningf("%v: unknown command: %s", c.Conn.RemoteAddr(), rq.Command)
+		rp = mpd.FailureResponse{
+			Error:     mpd.AckErrorUnknown,
+			CommandNb: c.cnb,
+			Command:   rq.Command,
+			Message:   "unknown command",
+		}
+	}
+	l.Debugf("%v: response: %v", c.Conn.RemoteAddr(), rp)
+	if rp != nil {
+		c.Conn.Write(rp.Format())
+	}
 
-		if inCommandList {
-			cnb++
-		} else {
-			cnb = 0
-		}
+	if c.inCommandList {
+		c.cnb++
+	} else {
+		c.cnb = 0
 	}
 }

@@ -2,12 +2,12 @@ package submpd
 
 import "github.com/luc65r/submpd/mpd"
 
-var Commands = map[string]func(*State, []string) mpd.Response{
-	"ping": func(s *State, args []string) mpd.Response {
+var Commands = map[string]func(*Client, []string) mpd.Response{
+	"ping": func(c *Client, args []string) mpd.Response {
 		return mpd.NormalResponse{}
 	},
 
-	"status": func(s *State, args []string) mpd.Response {
+	"status": func(c *Client, args []string) mpd.Response {
 		return mpd.NormalResponse{
 			Data: map[string]string{
 				"repeat":         "0",
@@ -23,11 +23,11 @@ var Commands = map[string]func(*State, []string) mpd.Response{
 		}
 	},
 
-	"plchanges": func(s *State, args []string) mpd.Response {
+	"plchanges": func(c *Client, args []string) mpd.Response {
 		return mpd.NormalResponse{}
 	},
 
-	"outputs": func(s *State, args []string) mpd.Response {
+	"outputs": func(c *Client, args []string) mpd.Response {
 		return mpd.NormalResponse{
 			Data: map[string]string{
 				"outputid":      "0",
@@ -37,7 +37,38 @@ var Commands = map[string]func(*State, []string) mpd.Response{
 		}
 	},
 
-	"decoders": func(s *State, args []string) mpd.Response {
+	"decoders": func(c *Client, args []string) mpd.Response {
 		return mpd.NormalResponse{}
+	},
+
+	"command_list_begin": func(c *Client, args []string) mpd.Response {
+		c.inCommandList = true
+		c.cnb = -1
+		return nil
+	},
+
+	"command_list_end": func(c *Client, args []string) mpd.Response {
+		c.inCommandList = false
+		return nil
+	},
+
+	"idle": func(c *Client, args []string) mpd.Response {
+		c.idle = true
+		return nil
+	},
+
+	"noidle": func(c *Client, args []string) mpd.Response {
+		if !c.idle {
+			return mpd.NormalResponse{}
+		}
+
+		rp := mpd.NormalResponse{
+			Data: map[string]string{
+				"changed": c.subs.String(),
+			},
+		}
+		c.subs = 0
+		c.idle = false
+		return rp
 	},
 }
