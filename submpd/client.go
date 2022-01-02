@@ -15,8 +15,6 @@ type Client struct {
 	Conn          net.Conn
 	subChan       <-chan subsystems.Subsystems
 	subs          subsystems.Subsystems
-	cnb           int
-	inCommandList bool
 	idle          bool
 }
 
@@ -66,13 +64,10 @@ func handleRequest(c *Client, msg []byte) {
 		l.Warningf("%v: failed to parse request: %s", c.Conn.RemoteAddr(), msg)
 		rp := mpd.FailureResponse{
 			Error:     mpd.AckErrorUnknown,
-			CommandNb: c.cnb,
 			Command:   "",
 			Message:   "failed to parse request",
 		}
 		c.Conn.Write(rp.Format())
-		c.inCommandList = false
-		c.cnb = 0
 	}
 	l.Debugf("%v: %s", c.Conn.RemoteAddr(), msg)
 
@@ -81,7 +76,6 @@ func handleRequest(c *Client, msg []byte) {
 		l.Warningf("%v: expected noidle, got: %s", c.Conn.RemoteAddr(), rq.Command)
 		rp = mpd.FailureResponse{
 			Error:     mpd.AckErrorUnknown,
-			CommandNb: c.cnb,
 			Command:   rq.Command,
 			Message:   "expected noidle",
 		}
@@ -92,7 +86,6 @@ func handleRequest(c *Client, msg []byte) {
 		l.Warningf("%v: unknown command: %s", c.Conn.RemoteAddr(), rq.Command)
 		rp = mpd.FailureResponse{
 			Error:     mpd.AckErrorUnknown,
-			CommandNb: c.cnb,
 			Command:   rq.Command,
 			Message:   "unknown command",
 		}
@@ -100,11 +93,5 @@ func handleRequest(c *Client, msg []byte) {
 	l.Debugf("%v: response: %v", c.Conn.RemoteAddr(), rp)
 	if rp != nil {
 		c.Conn.Write(rp.Format())
-	}
-
-	if c.inCommandList {
-		c.cnb++
-	} else {
-		c.cnb = 0
 	}
 }

@@ -41,18 +41,8 @@ var Commands = map[string]func(*Client, []string) mpd.Response{
 		return mpd.NormalResponse{}
 	},
 
-	"command_list_begin": func(c *Client, args []string) mpd.Response {
-		c.inCommandList = true
-		c.cnb = -1
-		return nil
-	},
-
-	"command_list_end": func(c *Client, args []string) mpd.Response {
-		c.inCommandList = false
-		return nil
-	},
-
 	"idle": func(c *Client, args []string) mpd.Response {
+		// TODO: specified subsystems
 		c.idle = true
 		return nil
 	},
