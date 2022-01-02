@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type Subsystems int16
+type Subsystems int
 
 const (
 	Database Subsystems = 1 << iota
